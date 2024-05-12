@@ -97,7 +97,12 @@ export default function AppFunctional(props) {
   function onSubmit(evt) {
     evt.preventDefault()
 
+    const coordinates = getXY()
+
     const payload = {
+      x: coordinates.x,
+      y: coordinates.y,
+      steps: steps,
       email: email,
     }
     fetch('http://localhost:9000/api/result', {
