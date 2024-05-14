@@ -7,6 +7,11 @@ const initialEmail = ''
 const initialSteps = 0
 const initialIndex = 4 // the index the "B" is at
 
+function validateEmail(email) {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email);
+}
+
 export default function AppFunctional(props) {
   // THE FOLLOWING HELPERS ARE JUST RECOMMENDATIONS.
   // You can delete them and build your own logic from scratch.
@@ -20,13 +25,35 @@ export default function AppFunctional(props) {
     const numRows = 3 
     const numCols = 3
 
-    const x = index % numCols
-    const y = Math.floor(index / numRows)
+    let x  
+    let y  
+
+    if(index === 0 || index === 3 || index === 6){
+      x = 1
+    }
+    else if(index === 1 || index === 4|| index === 7 ){
+      x = 2
+    }
+    else{
+      x = 3
+    }
+
+    if(index < 3){
+      y = 1
+    }
+    else if(index < 6) {
+      y = 2
+    }
+    else{
+      y = 3
+    }
+    
     return { x, y}
     // It it not necessary to have a state to track the coordinates.
     // It's enough to know what index the "B" is at, to be able to calculate them.
+     
   }
-
+  
   function getXYMessage() {
     const { x, y } = getXY()
     return `Coordinates (${x}, ${y})`
@@ -44,21 +71,16 @@ export default function AppFunctional(props) {
   }
 
   function getNextIndex(direction) {
-    const numRows = 3
-    const numCols = 3
-
-    const currentRow = Math.floor(index / numCols)
-    const currentCol = index % numCols
 
     switch (direction) {
       case 'left':
-        return currentCol > 0 ? index - 1 : index;
+        return  index % 3 === 0 ? index: index - 1; 
       case 'up':
-        return currentRow > 0 ? index - numCols : index;
+        return index < 3 ? index: index - 3;
       case 'right':
-        return currentCol < numCols - 1 ? index + 1 : index;
+        return (index - 2) % 3 === 0 ? index : index + 1;
       case 'down':
-        return currentRow < numRows - 1 ? index + numCols : index;
+        return index > 5  ? index: index + 3;
       default:
         return index
     }
@@ -75,7 +97,6 @@ export default function AppFunctional(props) {
     setIndex(newIndex)
     setSteps(steps + 1)
 
-    setMessage(getXYMessage())
     // This event handler can use the helper above to obtain a new index for the "B",
     // and change any states accordingly.
   }
@@ -97,6 +118,11 @@ export default function AppFunctional(props) {
   function onSubmit(evt) {
     evt.preventDefault()
 
+    const isValidEmail = validateEmail(email);
+  if (!isValidEmail) {
+    setMessage("Please enter a valid email address.");
+    return
+  }
     const coordinates = getXY()
 
     const payload = {
@@ -114,9 +140,19 @@ export default function AppFunctional(props) {
     })
     .then(response => {
       if (!response.ok) {
-        throw new Error('Failed to submit the form');
+        return response.json().then(data => {
+        throw new Error();
+      })
       }
+      return response.json();
       // Handle successful response if needed...
+    })
+    .then(data => {
+      // Handle successful response
+      setMessage(data.message);
+      // Reset coordinates and steps
+      setSteps(0);
+      setIndex(initialIndex);
     })
     .catch(error => {
       console.error('Error:', error);
@@ -128,7 +164,7 @@ export default function AppFunctional(props) {
   return (
     <div id="wrapper" className={props.className}>
       <div className="info">
-        <h3 id="coordinates">{message}</h3>
+        <h3 id="coordinates">{getXYMessage()}</h3>
         <h3 id="steps">You moved {steps} times</h3>
       </div>
       <div id="grid">
@@ -141,7 +177,7 @@ export default function AppFunctional(props) {
         }
       </div>
       <div className="info">
-        <h3 id="message"></h3>
+        <h3 id="message">{message}</h3>
       </div>
       <div id="keypad">
         <button id="left" onClick={(evt) => move(evt, 'left')}>LEFT</button>
