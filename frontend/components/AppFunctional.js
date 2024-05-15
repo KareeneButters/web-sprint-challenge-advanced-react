@@ -7,10 +7,6 @@ const initialEmail = ''
 const initialSteps = 0
 const initialIndex = 4 // the index the "B" is at
 
-function validateEmail(email) {
-  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return regex.test(email);
-}
 
 export default function AppFunctional(props) {
   // THE FOLLOWING HELPERS ARE JUST RECOMMENDATIONS.
@@ -22,8 +18,6 @@ export default function AppFunctional(props) {
   const [index, setIndex] = useState(initialIndex)
 
   function getXY() {
-    const numRows = 3 
-    const numCols = 3
 
     let x  
     let y  
@@ -71,101 +65,100 @@ export default function AppFunctional(props) {
   }
 
   function getNextIndex(direction) {
-
+    let newIndex = index;
+  
     switch (direction) {
       case 'left':
-        return  index % 3 === 0 ? index: index - 1; 
-      case 'up':
-        return index < 3 ? index: index - 3;
-      case 'right':
-        return (index - 2) % 3 === 0 ? index : index + 1;
-      case 'down':
-        return index > 5  ? index: index + 3;
-      default:
-        return index
-    }
-    // This helper takes a direction ("left", "up", etc) and calculates what the next index
-    // of the "B" would be. If the move is impossible because we are at the edge of the grid,
-    // this helper should return the current index unchanged.
-  }
-
-  function move(evt, direction) {
-    evt.preventDefault()
-
-    const newIndex = getNextIndex(direction)
-
-    setIndex(newIndex)
-    setSteps(steps + 1)
-
-    // This event handler can use the helper above to obtain a new index for the "B",
-    // and change any states accordingly.
-  }
-
-  function onChange(evt) {
-    const { value, id } = evt.target
-
-    switch (id) {
-      case 'email':
-        setEmail(value)
+        newIndex = index % 3 === 0 ? index : index - 1;
         break;
-
+      case 'up':
+        newIndex = index < 3 ? index : index - 3;
+        break;
+      case 'right':
+        newIndex = (index - 2) % 3 === 0 ? index : index + 1;
+        break;
+      case 'down':
+        newIndex = index > 5 ? index : index + 3;
+        break;
+      default:
+        break;
+    }
+  
+    return { newIndex, isValidMove: newIndex !== index };
+  }
+  
+  function move(evt, direction) {
+    evt.preventDefault();
+  
+    const { newIndex, isValidMove } = getNextIndex(direction);
+  
+    if (!isValidMove) {
+      switch (direction) {
+        case 'left':
+          setMessage("You can't go left");
+          break;
+        case 'up':
+          setMessage("You can't go up");
+          break;
+        case 'right':
+          setMessage("You can't go right");
+          break;
+        case 'down':
+          setMessage("You can't go down");
+          break;
         default:
           break;
+      }
+    } else {
+      setIndex(newIndex);
+      setSteps(steps + 1);
+      setMessage('');
+    }
+  }
+ 
+  function onChange(evt) {
+    const { value } = evt.target
+    setEmail(value)
     }
     // You will need this to update the value of the input.
-  }
+  
 
   function onSubmit(evt) {
     evt.preventDefault()
 
-    const isValidEmail = validateEmail(email);
-  if (!isValidEmail) {
-    setMessage("Please enter a valid email address.");
-    return
-  }
-    const coordinates = getXY()
+    // if (email === "foo@bar.baz") {
+    //   setMessage("foo@bar.baz failure");
+    //   setEmail(initialEmail)
+    //   return;
+    // }
 
-    const payload = {
-      x: coordinates.x,
-      y: coordinates.y,
-      steps: steps,
-      email: email,
-    }
-    fetch('http://localhost:9000/api/result', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    })
+   
+    const [x,y] = getXY()
+    let message
+    axios.post('http://localhost:9000/api/result', {email, steps, x, y})
+
     .then(response => {
-      if (!response.ok) {
-        return response.json().then(data => {
-        throw new Error();
-      })
-      }
-      return response.json();
-      // Handle successful response if needed...
-    })
-    .then(data => {
-      // Handle successful response
-      setMessage(data.message);
-      // Reset coordinates and steps
-      setSteps(0);
-      setIndex(initialIndex);
+     message = response.data.message
     })
     .catch(error => {
-      console.error('Error:', error);
+      // message = error.response.data.message
       // Handle error if needed...
+      console.log(error.response)
+    })
+    .finally (() => {
+      setMessage(message)
+      setEmail(initialEmail)
     })
     // Use a POST request to send a payload to the server.
+   
   }
+
 
   return (
     <div id="wrapper" className={props.className}>
       <div className="info">
         <h3 id="coordinates">{getXYMessage()}</h3>
-        <h3 id="steps">You moved {steps} times</h3>
+        <h3 id="steps">{`You moved ${steps} time${steps == 1 ? '' : 's'}`} </h3>
       </div>
       <div id="grid">
         {
