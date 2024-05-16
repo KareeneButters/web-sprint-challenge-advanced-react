@@ -1,5 +1,6 @@
 import React from 'react'
 import { useState } from 'react'
+import axios from 'axios'
 
 // Suggested initial states
 const initialMessage = ''
@@ -133,7 +134,7 @@ export default function AppFunctional(props) {
     // }
 
    
-    const [x,y] = getXY()
+    const {x,y} = getXY()
     let message
     axios.post('http://localhost:9000/api/result', {email, steps, x, y})
 
@@ -141,7 +142,7 @@ export default function AppFunctional(props) {
      message = response.data.message
     })
     .catch(error => {
-      // message = error.response.data.message
+      message = error.response.data.message
       // Handle error if needed...
       console.log(error.response)
     })
@@ -158,7 +159,7 @@ export default function AppFunctional(props) {
     <div id="wrapper" className={props.className}>
       <div className="info">
         <h3 id="coordinates">{getXYMessage()}</h3>
-        <h3 id="steps">{`You moved ${steps} time${steps == 1 ? '' : 's'}`} </h3>
+        <h3 id="steps">{`You moved ${steps} time${steps == 1 ? '' :'s'}`}</h3>
       </div>
       <div id="grid">
         {
